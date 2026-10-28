@@ -1,0 +1,113 @@
+/* ==========================================================================
+   PyStudio — autocomplete popup
+   Uses the theme variables from style.css / syntax.css, so it follows
+   Blush, Lavender, Mint, Midnight and Binary automatically.
+   ========================================================================== */
+
+/* Hidden element used to measure the caret position */
+.ac-mirror {
+    position: fixed;
+    top: 0;
+    left: -9999px;
+    visibility: hidden;
+    pointer-events: none;
+    white-space: pre;
+    overflow: hidden;
+    height: 0;
+    box-sizing: border-box;
+}
+
+.ac-popup {
+    position: fixed;
+    z-index: 2000;
+    margin: 0;
+    padding: 4px;
+    min-width: 240px;
+    max-width: min(420px, calc(100vw - 16px));
+    max-height: 260px;
+    overflow-y: auto;
+    list-style: none;
+    font-family: var(--font-code, ui-monospace, Menlo, Consolas, monospace);
+    font-size: 0.85rem;
+    line-height: 1.3;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 8px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 144, 184, 0.45) transparent;
+}
+
+/* style.css has a global [hidden] rule; keep it working for the popup */
+.ac-popup[hidden] { display: none !important; }
+
+.ac-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.38rem 0.55rem;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.ac-item.ac-selected {
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
+    box-shadow: inset 2px 0 0 var(--primary);
+}
+
+.ac-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-label b {
+    font-weight: 700;
+    color: var(--primary-hover, var(--primary));
+}
+
+.ac-detail {
+    flex: none;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+}
+
+/* Kind badges: reuse the syntax token colors */
+.ac-badge {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 5px;
+    color: var(--ac-c, var(--text-muted));
+    background: color-mix(in srgb, var(--ac-c, var(--text-muted)) 16%, transparent);
+}
+
+.ac-k-keyword  { --ac-c: var(--tok-keyword); }
+.ac-k-builtin  { --ac-c: var(--tok-builtin); }
+.ac-k-function { --ac-c: var(--tok-func); }
+.ac-k-method   { --ac-c: var(--tok-func); }
+.ac-k-class    { --ac-c: var(--tok-class); }
+.ac-k-variable { --ac-c: var(--tok-const); }
+.ac-k-module   { --ac-c: var(--tok-decorator); }
+.ac-k-snippet  { --ac-c: var(--tok-string); }
+
+/* Binary theme: terminal look */
+[data-theme="binary"] .ac-popup {
+    background: #000a02;
+    box-shadow: 0 0 18px rgba(0, 255, 65, 0.25);
+}
+
+.ac-popup::-webkit-scrollbar { width: 8px; }
+.ac-popup::-webkit-scrollbar-thumb {
+    background: rgba(139, 144, 184, 0.4);
+    border-radius: 999px;
+}

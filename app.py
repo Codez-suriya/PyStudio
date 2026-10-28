@@ -240,10 +240,17 @@ def styles():
 def serve_syntax_css():
     return send_from_directory(BASE_DIR, "syntax.css")
 
-
 @app.route("/syntax.js")
 def serve_syntax_js():
     return send_from_directory(BASE_DIR, "syntax.js")
+
+@app.route("/autocomplete.css")
+def serve_autocomplete_css():
+    return send_from_directory(BASE_DIR, "autocomplete.css")
+
+@app.route("/autocomplete.js")
+def serve_autocomplete_js():
+    return send_from_directory(BASE_DIR, "autocomplete.js")
 
 
 if __name__ == "__main__":
