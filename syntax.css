@@ -1,0 +1,169 @@
+/* ==========================================================================
+   PyStudio — syntax highlighting colors (one palette per theme)
+   Load AFTER your main stylesheet.
+   ========================================================================== */
+
+/* ---------- Token palettes ---------- */
+:root {
+    /* Blush (default, light) */
+    --tok-keyword:   #c2255c;
+    --tok-string:    #17835f;
+    --tok-number:    #c45a00;
+    --tok-comment:   #9a7b92;
+    --tok-func:      #6741d9;
+    --tok-class:     #b35900;
+    --tok-builtin:   #1971c2;
+    --tok-const:     #e8590c;
+    --tok-decorator: #ae3ec9;
+    --tok-operator:  #8a6b82;
+    --tok-self:      #be4bdb;
+    --tok-interp:    #1971c2;
+}
+
+[data-theme="lavender"] {
+    --tok-keyword:   #7c3aed;
+    --tok-string:    #c2255c;
+    --tok-number:    #d9480f;
+    --tok-comment:   #8a7aab;
+    --tok-func:      #2f6fd0;
+    --tok-class:     #0b7285;
+    --tok-builtin:   #0e7490;
+    --tok-const:     #d9480f;
+    --tok-decorator: #c2255c;
+    --tok-operator:  #8577a3;
+    --tok-self:      #7c3aed;
+    --tok-interp:    #2f6fd0;
+}
+
+[data-theme="mint"] {
+    --tok-keyword:   #0a8f68;
+    --tok-string:    #c2410c;
+    --tok-number:    #7c3aed;
+    --tok-comment:   #5f9985;
+    --tok-func:      #0369a1;
+    --tok-class:     #b45309;
+    --tok-builtin:   #0e7490;
+    --tok-const:     #7c3aed;
+    --tok-decorator: #be185d;
+    --tok-operator:  #4a8a74;
+    --tok-self:      #0a8f68;
+    --tok-interp:    #0369a1;
+}
+
+[data-theme="midnight"] {
+    --tok-keyword:   #ff7aa2;
+    --tok-string:    #a6e3a1;
+    --tok-number:    #ffb86b;
+    --tok-comment:   #8f7bb0;
+    --tok-func:      #82aaff;
+    --tok-class:     #ffd166;
+    --tok-builtin:   #89ddff;
+    --tok-const:     #f78c6c;
+    --tok-decorator: #c792ea;
+    --tok-operator:  #b39bd0;
+    --tok-self:      #ff9ec0;
+    --tok-interp:    #89ddff;
+}
+
+[data-theme="binary"] {
+    --tok-keyword:   #00ff41;
+    --tok-string:    #b6ffbf;
+    --tok-number:    #5cffd1;
+    --tok-comment:   #3f8f4d;
+    --tok-func:      #66ff99;
+    --tok-class:     #d4ff5c;
+    --tok-builtin:   #00e0a0;
+    --tok-const:     #5cffd1;
+    --tok-decorator: #ffe45c;
+    --tok-operator:  #62b86d;
+    --tok-self:      #66ff99;
+    --tok-interp:    #5cffd1;
+}
+
+/* ---------- Editor overlay ---------- */
+.code-editor {
+    --ed-font-size: 0.95rem;
+    --ed-pad: 1.1rem 1.25rem;
+
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 340px;
+}
+
+/* The colored layer and the real textarea must share identical text metrics */
+.code-editor .code-highlight,
+.code-editor #python-code {
+    margin: 0;
+    padding: var(--ed-pad);
+    border: 0;
+    font-family: var(--font-code, "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace);
+    font-size: var(--ed-font-size);
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: 0;
+    tab-size: 4;
+    white-space: pre;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    font-variant-ligatures: none;
+}
+
+.code-editor .code-highlight {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    color: var(--code-text, #4a2545);
+    background: transparent;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.code-editor #python-code {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    color: transparent;                    /* the colored layer shows through */
+    caret-color: var(--accent-deep, #ef5f8f);
+    background: transparent;
+    resize: none;
+    outline: none;
+    overflow: auto;
+}
+
+.code-editor #python-code::placeholder {
+    color: var(--code-muted, #b394aa);
+}
+
+.code-editor #python-code::selection {
+    color: transparent;
+    background: rgba(var(--accent-rgb, 255, 138, 171), 0.35);
+}
+
+@media (max-width: 640px) {
+    .code-editor { --ed-font-size: 0.88rem; }
+}
+
+/* ---------- Token colors ---------- */
+.tok-keyword   { color: var(--tok-keyword); }
+.tok-string    { color: var(--tok-string); }
+.tok-number    { color: var(--tok-number); }
+.tok-comment   { color: var(--tok-comment); font-style: italic; }
+.tok-func      { color: var(--tok-func); }
+.tok-class     { color: var(--tok-class); }
+.tok-builtin   { color: var(--tok-builtin); }
+.tok-const     { color: var(--tok-const); }
+.tok-decorator { color: var(--tok-decorator); }
+.tok-operator  { color: var(--tok-operator); }
+.tok-self      { color: var(--tok-self); font-style: italic; }
+.tok-interp    { color: var(--tok-interp); }
+
+/* Matrix glow for the hacker theme */
+[data-theme="binary"] .tok-keyword,
+[data-theme="binary"] .tok-func { text-shadow: 0 0 8px rgba(0, 255, 65, 0.5); }
+[data-theme="binary"] .tok-string { text-shadow: 0 0 6px rgba(182, 255, 191, 0.25); }

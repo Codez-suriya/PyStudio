@@ -236,6 +236,15 @@ asgi_app = WsgiToAsgi(app)
 def styles():
     return send_from_directory(BASE_DIR, "style.css")
 
+@app.route("/syntax.css")
+def serve_syntax_css():
+    return send_from_directory(BASE_DIR, "syntax.css")
+
+
+@app.route("/syntax.js")
+def serve_syntax_js():
+    return send_from_directory(BASE_DIR, "syntax.js")
+
 
 if __name__ == "__main__":
     import uvicorn
