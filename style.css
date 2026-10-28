@@ -433,9 +433,16 @@ button:disabled {
     color: var(--code-muted);
 }
 
+/* ===== Theme-aware editor text selection ===== */
+
 #python-code::selection {
-    background: rgba(129, 140, 248, 0.45);
-    color: #fff;
+    background: var(--selection-bg, var(--primary));
+    color: var(--selection-text, var(--primary-contrast));
+}
+
+#python-code::-moz-selection {
+    background: var(--selection-bg, var(--primary));
+    color: var(--selection-text, var(--primary-contrast));
 }
 
 /* Footers */
@@ -930,4 +937,79 @@ body, .app-header, .editor-panel, .output-panel, .panel-header,
 #run-button:disabled {
     opacity: 0.65 !important;
     cursor: not-allowed;
+}
+
+
+/* ===== PyStudio selection colors for all themes ===== */
+
+/* Blush */
+:root {
+    --selection-bg: #ffc2d6;
+    --selection-text: #4a2545;
+}
+
+/* Lavender */
+:root[data-theme="lavender"] {
+    --selection-bg: #d8c2ff;
+    --selection-text: #3d2a5c;
+}
+
+/* Mint */
+:root[data-theme="mint"] {
+    --selection-bg: #b9f2dc;
+    --selection-text: #1f5a45;
+}
+
+/* Midnight */
+:root[data-theme="midnight"] {
+    --selection-bg: #563b79;
+    --selection-text: #ffffff;
+}
+
+/* Binary */
+:root[data-theme="binary"] {
+    --selection-bg: #064d1b;
+    --selection-text: #00ff66;
+}
+
+/* ===== Force theme-aware editor selection ===== */
+
+#python-code {
+    -webkit-tap-highlight-color: transparent;
+}
+
+#python-code::selection,
+#python-code::-moz-selection {
+    background: var(--selection-bg) !important;
+    color: var(--selection-text) !important;
+}
+
+/* Blush */
+:root {
+    --selection-bg: #ffc2d6;
+    --selection-text: #4a2545;
+}
+
+/* Lavender */
+:root[data-theme="lavender"] {
+    --selection-bg: #d8c2ff;
+    --selection-text: #3d2a5c;
+}
+
+/* Mint */
+:root[data-theme="mint"] {
+    --selection-bg: #b9f2dc;
+    --selection-text: #1f5a45;
+}
+
+/* Midnight */
+:root[data-theme="midnight"] {
+    --selection-bg: #563b79;
+    --selection-text: #ffffff;
+}
+
+/* Binary */
+:root[data-theme="binary"] {
+    --selection-bg: #064d1b;
+    --selection-text: #00ff66;
 }
