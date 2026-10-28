@@ -261,8 +261,16 @@
             if (/\d$/.test(head) && prefix === "") return null;
 
             const locals = collectLocals(src);
-            locals.delete(prefix); // don't suggest the word being typed unless declared elsewhere
+
+            // Keep declared functions and classes available even
+            // when the typed prefix matches their complete name.
+            if (!["function", "class"].includes(locals.get(prefix))) {
+                locals.delete(prefix);
+            }
+
             items = [];
+
+            
             for (const [name, kind] of locals) {
                 items.push({ label: name, kind, detail: kind, insert: name, weight: -0.5 });
             }
