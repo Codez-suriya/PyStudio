@@ -984,32 +984,3 @@ body, .app-header, .editor-panel, .output-panel, .panel-header,
     color: var(--selection-text) !important;
 }
 
-/* Blush */
-:root {
-    --selection-bg: #ffc2d6;
-    --selection-text: #4a2545;
-}
-
-/* Lavender */
-:root[data-theme="lavender"] {
-    --selection-bg: #d8c2ff;
-    --selection-text: #3d2a5c;
-}
-
-/* Mint */
-:root[data-theme="mint"] {
-    --selection-bg: #b9f2dc;
-    --selection-text: #1f5a45;
-}
-
-/* Midnight */
-:root[data-theme="midnight"] {
-    --selection-bg: #563b79;
-    --selection-text: #ffffff;
-}
-
-/* Binary */
-:root[data-theme="binary"] {
-    --selection-bg: #064d1b;
-    --selection-text: #00ff66;
-}

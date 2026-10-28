@@ -140,9 +140,10 @@
     color: var(--code-muted, #b394aa);
 }
 
-.code-editor #python-code::selection {
-    color: transparent;
-    background: rgba(var(--accent-rgb, 255, 138, 171), 0.35);
+.code-editor #python-code::selection,
+.code-editor #python-code::-moz-selection {
+    color: var(--selection-text, var(--code-text)) !important;
+    background: var(--selection-bg, var(--primary)) !important;
 }
 
 @media (max-width: 640px) {
