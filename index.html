@@ -450,6 +450,104 @@ if (picker) {
     applyTheme(savedTheme);
 }
 
+
+/* ===== PyStudio Keyboard Shortcuts ===== */
+
+document.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+
+    // Ctrl + F5: Run code
+    if (event.ctrlKey && key === "f5") {
+        event.preventDefault();
+        runButton.click();
+        return;
+    }
+
+    // Ctrl + L: Clear editor
+    if (event.ctrlKey && key === "l") {
+        event.preventDefault();
+        clearButton.click();
+        editor.focus();
+        return;
+    }
+
+    // Ctrl + /: Toggle comments on selected lines
+    if (event.ctrlKey && key === "/") {
+        event.preventDefault();
+
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const value = editor.value;
+
+        const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+        let lineEnd = value.indexOf("\n", end);
+
+        if (lineEnd === -1) lineEnd = value.length;
+
+        const selectedText = value.slice(lineStart, lineEnd);
+        const lines = selectedText.split("\n");
+
+        // Uncomment if every non-empty line is already commented.
+        const nonEmpty = lines.filter(line => line.trim() !== "");
+        const shouldUncomment =
+            nonEmpty.length > 0 &&
+            nonEmpty.every(line => /^\s*#/.test(line));
+
+        const updatedLines = lines.map(line => {
+            if (line.trim() === "") return line;
+
+            if (shouldUncomment) {
+                return line.replace(/^(\s*)# ?/, "$1");
+            }
+
+            return line.replace(/^(\s*)/, "$1# ");
+        });
+
+        const updatedText = updatedLines.join("\n");
+        editor.setRangeText(
+            updatedText,
+            lineStart,
+            lineEnd,
+            "select"
+        );
+
+        // Keep the selection around the changed lines.
+        editor.setSelectionRange(
+            lineStart,
+            lineStart + updatedText.length
+        );
+
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+        editor.focus();
+        return;
+    }
+
+    // Alt + 1–5: Switch themes
+    if (event.altKey && !event.ctrlKey && !event.metaKey) {
+        const themes = {
+            "1": "blush",
+            "2": "lavender",
+            "3": "mint",
+            "4": "midnight",
+            "5": "binary"
+        };
+
+        const theme = themes[key];
+
+        if (theme) {
+            const button = picker?.querySelector(
+                `.swatch[data-theme="${theme}"]`
+            );
+
+            if (button) {
+                event.preventDefault();
+                button.click();
+            }
+        }
+    }
+});
+
+
 /* ===== Binary Theme Falling Digits ===== */
 if (rain) {
     setInterval(() => {
