@@ -2,17 +2,23 @@
 """
 PyStudio cross-platform installer launcher.
 
-Detects the OS, asks the user which platform to install for,
-then invokes the matching install script and optionally launches run.ps1.
-
-Linux  -> runs install.sh (expects bash)
-Windows -> sets execution policy for current user, runs install.ps1, then run.ps1
+Detects the OS, asks the user which platform to install for.
+If the installer script (install.sh or install.ps1) is missing,
+it automatically downloads it from GitHub before running.
 """
 
 import os
 import platform
 import subprocess
 import sys
+import urllib.request
+
+# ============================================================
+#  GITHUB CONFIGURATION
+# ============================================================
+REPO_OWNER = "Codez-suriya"
+REPO_NAME = "PyStudio"
+BRANCH = "main"  # Change to "Windows" if your scripts are on a different branch
 
 
 def detect_os() -> str:
@@ -25,81 +31,89 @@ def detect_os() -> str:
     return "unknown"
 
 
-def run(cmd, cwd=None, check=False):
-    """Run a command, stream output, return CompletedProcess."""
+def run(cmd, cwd=None):
+    """Run a command, stream output, return exit code (integer)."""
     print(f"  > {' '.join(cmd)}")
-    return subprocess.run(cmd, cwd=cwd, check=check)
+    try:
+        result = subprocess.run(cmd, cwd=cwd)
+        return result.returncode
+    except FileNotFoundError:
+        print(f"  ERROR: Command not found: {cmd[0]}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"  ERROR: {e}", file=sys.stderr)
+        return 1
+
+
+def download_file(url, dest_path):
+    """Download a file from the internet."""
+    print(f"[*] Downloading {os.path.basename(dest_path)}...")
+    try:
+        urllib.request.urlretrieve(url, dest_path)
+        print(f"[+] Downloaded successfully.")
+    except Exception as e:
+        print(f"  ERROR: Failed to download {url}", file=sys.stderr)
+        print(f"  Details: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def install_linux(script_dir: str) -> int:
-    """Run install.sh via bash."""
+    """Download (if needed) and run install.sh."""
     script = os.path.join(script_dir, "install.sh")
+    
     if not os.path.isfile(script):
-        print(f"ERROR: install.sh not found in {script_dir}", file=sys.stderr)
-        return 1
-    # bash is the expected interpreter on Linux
-    return run(["bash", script], cwd=script_dir).returncode
+        url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/{BRANCH}/install.sh"
+        download_file(url, script)
+        
+    # Ensure it's executable
+    os.chmod(script, 0o755)
+    
+    print("[*] Starting Linux installation...")
+    return run(["bash", "install.sh"], cwd=script_dir)
 
 
 def install_windows(script_dir: str) -> int:
-    """Set execution policy, run install.ps1, then optionally run.ps1."""
-    install_ps1 = os.path.join(script_dir, "install.ps1")
-    if not os.path.isfile(install_ps1):
-        print(f"ERROR: install.ps1 not found in {script_dir}", file=sys.stderr)
-        return 1
+    """Download (if needed) and run install.ps1, then run.ps1."""
+    install_script = os.path.join(script_dir, "install.ps1")
+    run_script = os.path.join(script_dir, "run.ps1")
 
-    # 1. Allow local scripts for the current user (does not require admin).
-    #    RemoteSigned permits locally-created scripts while still requiring
-    #    signatures for scripts downloaded from the internet.
-    print("[*] Setting execution policy to RemoteSigned for CurrentUser...")
-    policy_cmd = [
-        "powershell",
-        "-NoProfile",
-        "-Command",
-        "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force",
-    ]
-    r = subprocess.run(policy_cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        print("WARNING: could not set execution policy.", file=sys.stderr)
-        print(r.stderr, file=sys.stderr)
-        print("Continuing with -ExecutionPolicy Bypass for this run only...",
-              file=sys.stderr)
+    # 1. Download install.ps1 if missing
+    if not os.path.isfile(install_script):
+        url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/{BRANCH}/install.ps1"
+        download_file(url, install_script)
 
-    # 2. Run install.ps1 with -File so the path is passed correctly even with spaces.
-    #    -NoProfile avoids user profile side effects.
-    print("[*] Running install.ps1...")
-    install_cmd = [
-        "powershell",
-        "-NoProfile",
-        "-ExecutionPolicy", "Bypass",
-        "-File", install_ps1,
-    ]
-    rc = run(install_cmd, cwd=script_dir).returncode
+    # 2. Set Execution Policy (bypass for this session, no admin needed)
+    print("[*] Setting execution policy for this session...")
+    subprocess.run(
+        ["powershell", "-NoProfile", "-Command", "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force"],
+        check=False
+    )
+
+    # 3. Run install.ps1
+    print("[*] Starting Windows installation...")
+    rc = run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "install.ps1"], cwd=script_dir)
+    
     if rc != 0:
-        print(f"ERROR: install.ps1 exited with code {rc}", file=sys.stderr)
+        print(f"  ERROR: install.ps1 failed with code {rc}", file=sys.stderr)
         return rc
 
-    # 3. Offer to run run.ps1. install.ps1 itself already asks,
-    #    but this gives the Python wrapper a final say and covers the
-    #    case where the user declined inside install.ps1.
-    # run_ps1 = os.path.join(script_dir, "run.ps1")
-    # if os.path.isfile(run_ps1):
-    #     answer = input("\n  Launch PyStudio now? [Y/n] ").strip().lower()
-    #     if answer in ("", "y", "yes"):
-    #         print("[*] Running run.ps1...")
-    #         run_cmd = [
-    #             "powershell",
-    #             "-NoProfile",
-    #             "-ExecutionPolicy", "Bypass",
-    #             "-File", run_ps1,
-    #         ]
-    #         return run(run_cmd, cwd=script_dir).returncode
-    #     else:
-    #         print("  Run it later with: .\\run.ps1")
-    # else:
-    #     print("  run.ps1 not found; skipping launch.")
-
-    # return 0
+    # 4. Ask to launch (if run.ps1 was generated)
+    if os.path.isfile(run_script):
+        print("\n  Launch PyStudio now? [Y/n] ", end="")
+        try:
+            ans = input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            ans = "n"
+            
+        if ans in ("", "y", "yes"):
+            print("[*] Launching...")
+            return run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "run.ps1"], cwd=script_dir)
+        else:
+            print("  Run it later with: .\\run.ps1")
+    else:
+        print("  run.ps1 not found; skipping launch.")
+    
+    return 0
 
 
 def main() -> int:
@@ -124,13 +138,11 @@ def main() -> int:
 
     if choice == "1":
         if detected != "linux":
-            print("WARNING: selected Linux but the current OS is not Linux.",
-                  file=sys.stderr)
+            print("WARNING: selected Linux but the current OS is not Linux.", file=sys.stderr)
         return install_linux(script_dir)
     elif choice == "2":
         if detected != "windows":
-            print("WARNING: selected Windows but the current OS is not Windows.",
-                  file=sys.stderr)
+            print("WARNING: selected Windows but the current OS is not Windows.", file=sys.stderr)
         return install_windows(script_dir)
     else:
         print("  Invalid choice. Enter 1 or 2.", file=sys.stderr)
