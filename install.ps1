@@ -500,7 +500,7 @@ try {
     Write-Host ''
     Write-Host ("  {0}Start PyStudio{1}" -f "$($script:C_BOLD)$($script:C_BRIGHT_WHITE)", $script:C_RESET)
     Write-Host ''
-    Write-Host ("    {0}>{1} {2}.\run.bat{3}" -f `
+    Write-Host ("    {0}>{1} {2} By double clicking run.bat{3}" -f `
         $script:C_AMBER, $script:C_RESET, "$($script:C_BOLD)$($script:C_GOLD)", $script:C_RESET)
     Write-Host ''
 
