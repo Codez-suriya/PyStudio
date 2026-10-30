@@ -1,0 +1,580 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A simple online Python interpreter for writing and running Python code.">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/syntax.css">
+    <link rel="stylesheet" href="/autocomplete.css">
+    <title>PyStudio - Online Python Interpreter</title>
+</head>
+
+<body>
+
+    <!-- Main Application -->
+    <div class="app-container">
+
+
+<!-- Header -->
+
+<header class="app-header">
+    <div class="logo">
+        <h1>PyStudio</h1>
+        <p>Online Python Interpreter</p>
+    </div>
+
+    <div class="header-actions">
+        <div class="theme-picker" id="themePicker">
+            <button class="swatch active" data-theme="blush"
+                style="background:#ff8aab" aria-label="Blush theme"
+                title="Blush" type="button"></button>
+
+            <button class="swatch" data-theme="lavender"
+                style="background:#b98af0" aria-label="Lavender theme"
+                title="Lavender" type="button"></button>
+
+            <button class="swatch" data-theme="mint"
+                style="background:#5fd6a8" aria-label="Mint theme"
+                title="Mint" type="button"></button>
+
+            <button class="swatch" data-theme="midnight"
+                style="background:#2b1c42" aria-label="Midnight theme"
+                title="Midnight" type="button"></button>
+
+            <button class="swatch" data-theme="binary"
+                style="background:#00ff41" aria-label="Binary theme"
+                title="Binary" type="button"></button>
+        </div>
+    </div>
+</header>
+
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <h2>Python Playground</h2>
+                <p>
+                    Write, execute, and experiment with Python code
+                    directly in your browser.
+                </p>
+            </section>
+
+
+            <!-- Editor and Output Panels -->
+            <section class="ide-workspace" id="editor">
+
+                <!-- Code Editor Panel -->
+                <section class="editor-panel" aria-labelledby="editor-heading">
+
+                    <div class="panel-header">
+                        <div>
+                            <h2 id="editor-heading">Code Editor</h2>
+                        </div>
+
+                        <div class="editor-actions">
+                            <button type="button" id="clear-button">
+                                Clear
+                            </button>
+
+                            <button type="button" id="run-button">
+                                Run Code
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="editor-content">
+
+                        <label for="python-code">
+                            Python source code
+                        </label>
+
+                        <textarea
+                            id="python-code"
+                            name="python-code"
+                            rows="18"
+                            spellcheck="false"
+                            autocapitalize="off"
+                            autocomplete="off"
+                            placeholder="Write your Python code here..."
+                        >print("Hello, World!")
+
+name = "Python Developer"
+print("Welcome,", name)
+
+for number in range(1, 6):
+    print(number)</textarea>
+
+                    </div>
+
+                    <footer class="editor-footer">
+                        <span id="editor-status">Ready</span>
+                        <span id="line-count">Lines: 7</span>
+                        <span>Python 3</span>
+                    </footer>
+
+                </section>
+
+
+                <!-- Output Console Panel -->
+                <section class="output-panel" aria-labelledby="output-heading">
+
+                    <div class="panel-header">
+                        <h2 id="output-heading">Output Console</h2>
+
+                        <div class="output-actions">
+                            <button type="button" id="clear-output-button">
+                                Clear Output
+                            </button>
+                        </div>
+                    </div>               
+                    <div
+                        class="console-content"
+                        id="output"
+                        role="log"
+                        aria-live="polite"
+                        aria-relevant="additions text"
+                    >
+                        <div id="welcome-message">
+                            <p>Welcome to PyStudio!</p>
+                            <p>Your program output will appear here.</p>
+                        </div>
+                    </div>
+
+
+                    <footer class="console-footer">
+                        <span id="execution-status">Waiting to execute</span>
+                        <span id="execution-time">Execution time: --</span>
+                    </footer>
+
+                </section>
+
+            </section>
+
+        </main>
+
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>
+                &copy; 2026 PyStudio.
+                Built for learning Python.
+            </p>
+        </footer>
+
+    </div>
+
+
+<script>
+const editor = document.getElementById("python-code");
+const runButton = document.getElementById("run-button");
+const clearButton = document.getElementById("clear-button");
+const output = document.getElementById("output");
+const editorStatus = document.getElementById("editor-status");
+const executionStatus = document.getElementById("execution-status");
+const executionTime = document.getElementById("execution-time");
+
+let currentRunId = null;
+let isRunning = false;
+let pollToken = 0;
+let hasExecutedCode = false;
+
+const outputText = document.createElement("pre");
+outputText.textContent = "";
+output.appendChild(outputText);
+
+const inputForm = document.createElement("form");
+const inputLabel = document.createElement("label");
+inputLabel.htmlFor = "program-input";
+inputLabel.textContent = "Program input:";
+
+const inputField = document.createElement("input");
+inputField.id = "program-input";
+inputField.type = "text";
+inputField.autocomplete = "off";
+inputField.placeholder = "Enter input and press Enter";
+
+const sendButton = document.createElement("button");
+sendButton.type = "submit";
+sendButton.textContent = "Send Input";
+
+inputForm.append(inputLabel, inputField, sendButton);
+output.appendChild(inputForm);
+
+const stopButton = document.createElement("button");
+stopButton.type = "button";
+stopButton.textContent = "Stop Program";
+stopButton.hidden = true;
+runButton.insertAdjacentElement("afterend", stopButton);
+
+function appendOutput(text, stream = "stdout") {
+    outputText.textContent += text;
+    outputText.dataset.lastStream = stream;
+    output.scrollTop = output.scrollHeight;
+}
+
+function resetOutput() {
+    outputText.textContent = "";
+    outputText.dataset.lastStream = "";
+
+    if (!hasExecutedCode) {
+        hasExecutedCode = true;
+        document.getElementById("welcome-message")?.remove();
+    }
+}
+
+
+async function pollProgram(runId, token, startTime) {
+    let finalExecutionTime = null;
+
+    while (token === pollToken) {
+        let response;
+        let result;
+
+        try {
+            response = await fetch(
+                `/api/poll/${encodeURIComponent(runId)}`
+            );
+            result = await response.json();
+        } catch {
+            appendOutput("\nLost connection to the server.\n", "stderr");
+            break;
+        }
+
+        if (!response.ok) {
+            appendOutput(
+                "\n" + (result.error || "Could not read output.") + "\n",
+                "stderr"
+            );
+            break;
+        }
+
+        for (const event of result.events) {
+            appendOutput(event.text, event.stream);
+        }
+
+        if (result.execution_time != null) {
+            finalExecutionTime = result.execution_time;
+        }
+
+        if (result.done) {
+            if (result.return_code === 0) {
+                executionStatus.textContent = "Execution completed";
+            } else {
+                executionStatus.textContent =
+                    `Execution failed (exit code ${result.return_code})`;
+            }
+            break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 150));
+    }
+
+    if (token === pollToken) {
+        isRunning = false;
+        currentRunId = null;
+        runButton.disabled = false;
+        stopButton.hidden = true;
+        editorStatus.textContent = "Ready";
+        executionTime.textContent = finalExecutionTime !== null
+            ? `Execution time: ${finalExecutionTime.toFixed(3)}s`
+            : "Execution time: unavailable";
+    }
+}
+
+runButton.addEventListener("click", async () => {
+    if (isRunning) return;
+
+    const code = editor.value;
+    resetOutput();
+
+    if (!code.trim()) {
+        appendOutput("Please enter some Python code.\n", "stderr");
+        return;
+    }
+
+    isRunning = true;
+    runButton.disabled = true;
+    stopButton.hidden = false;
+    editorStatus.textContent = "Running...";
+    executionStatus.textContent = "Starting Python...";
+    appendOutput("Starting program...\n");
+
+    const startTime = performance.now();
+    const token = ++pollToken;
+
+    try {
+        const response = await fetch("/api/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || "Could not start program.");
+        }
+
+        currentRunId = result.run_id;
+        resetOutput();
+        executionStatus.textContent = "Program running";
+
+        await pollProgram(currentRunId, token, startTime);
+
+    } catch (error) {
+        appendOutput(error.message + "\n", "stderr");
+        isRunning = false;
+        runButton.disabled = false;
+        stopButton.hidden = true;
+        editorStatus.textContent = "Error";
+        executionStatus.textContent = "Execution failed";
+    }
+});
+
+inputForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!currentRunId || !isRunning) {
+        appendOutput("Start a program before sending input.\n", "stderr");
+        return;
+    }
+
+    const value = inputField.value;
+    const runId = currentRunId;
+
+    try {
+        const response = await fetch(
+            `/api/input/${encodeURIComponent(runId)}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ input: value })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            appendOutput((result.error || "Input failed") + "\n", "stderr");
+            return;
+        }
+
+        appendOutput(value + "\n");
+        inputField.value = "";
+        inputField.focus();
+
+    } catch {
+        appendOutput("Could not send input to the server.\n", "stderr");
+    }
+});
+
+stopButton.addEventListener("click", async () => {
+    if (!currentRunId) return;
+
+    const runId = currentRunId;
+    ++pollToken;
+    currentRunId = null;
+    isRunning = false;
+
+    try {
+        await fetch(`/api/stop/${encodeURIComponent(runId)}`, {
+            method: "POST"
+        });
+    } catch {
+        appendOutput("Could not contact the server to stop the program.\n", "stderr");
+    }
+
+    appendOutput("\nProgram stopped.\n");
+    executionStatus.textContent = "Stopped";
+    editorStatus.textContent = "Ready";
+    runButton.disabled = false;
+    stopButton.hidden = true;
+});
+
+clearButton.addEventListener("click", () => {
+    editor.value = "";
+    editorStatus.textContent = "Editor cleared";
+});
+
+document.getElementById("clear-output-button")
+    ?.addEventListener("click", () => {
+        resetOutput();
+        executionStatus.textContent = "Output cleared";
+    });
+
+
+
+
+/* ===== PyStudio Theme Switcher ===== */
+const picker = document.getElementById("themePicker");
+const rain = document.getElementById("binaryRain");
+
+if (picker) {
+    function applyTheme(theme) {
+        const selected = [
+            "blush", "lavender", "mint", "midnight", "binary"
+        ].includes(theme) ? theme : "blush";
+
+        if (selected === "blush") {
+            document.documentElement.removeAttribute("data-theme");
+        } else {
+            document.documentElement.setAttribute("data-theme", selected);
+        }
+
+        picker.querySelectorAll(".swatch").forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.theme === selected
+            );
+        });
+
+        try {
+            localStorage.setItem("pystudio-theme", selected);
+        } catch {}
+    }
+
+    picker.addEventListener("click", event => {
+        const button = event.target.closest(".swatch");
+        if (button) applyTheme(button.dataset.theme);
+    });
+
+    let savedTheme = "blush";
+    try {
+        savedTheme = localStorage.getItem("pystudio-theme") || "blush";
+    } catch {}
+
+    applyTheme(savedTheme);
+}
+
+
+/* ===== PyStudio Keyboard Shortcuts ===== */
+
+document.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+
+    // Ctrl + F5: Run code
+    if (event.ctrlKey && key === "f5") {
+        event.preventDefault();
+        runButton.click();
+        return;
+    }
+
+    // Ctrl + L: Clear editor
+    if (event.ctrlKey && key === "l") {
+        event.preventDefault();
+        clearButton.click();
+        editor.focus();
+        return;
+    }
+
+    // Ctrl + /: Toggle comments on selected lines
+    if (event.ctrlKey && key === "/") {
+        event.preventDefault();
+
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const value = editor.value;
+
+        const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+        let lineEnd = value.indexOf("\n", end);
+
+        if (lineEnd === -1) lineEnd = value.length;
+
+        const selectedText = value.slice(lineStart, lineEnd);
+        const lines = selectedText.split("\n");
+
+        // Uncomment if every non-empty line is already commented.
+        const nonEmpty = lines.filter(line => line.trim() !== "");
+        const shouldUncomment =
+            nonEmpty.length > 0 &&
+            nonEmpty.every(line => /^\s*#/.test(line));
+
+        const updatedLines = lines.map(line => {
+            if (line.trim() === "") return line;
+
+            if (shouldUncomment) {
+                return line.replace(/^(\s*)# ?/, "$1");
+            }
+
+            return line.replace(/^(\s*)/, "$1# ");
+        });
+
+        const updatedText = updatedLines.join("\n");
+        editor.setRangeText(
+            updatedText,
+            lineStart,
+            lineEnd,
+            "select"
+        );
+
+        // Keep the selection around the changed lines.
+        editor.setSelectionRange(
+            lineStart,
+            lineStart + updatedText.length
+        );
+
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+        editor.focus();
+        return;
+    }
+
+    // Alt + 1–5: Switch themes
+    if (event.altKey && !event.ctrlKey && !event.metaKey) {
+        const themes = {
+            "1": "blush",
+            "2": "lavender",
+            "3": "mint",
+            "4": "midnight",
+            "5": "binary"
+        };
+
+        const theme = themes[key];
+
+        if (theme) {
+            const button = picker?.querySelector(
+                `.swatch[data-theme="${theme}"]`
+            );
+
+            if (button) {
+                event.preventDefault();
+                button.click();
+            }
+        }
+    }
+});
+
+
+/* ===== Binary Theme Falling Digits ===== */
+if (rain) {
+    setInterval(() => {
+        if (document.documentElement.dataset.theme !== "binary") return;
+
+        const digit = document.createElement("span");
+        digit.className = "binary-digit";
+        digit.textContent = Math.random() < 0.5 ? "0" : "1";
+        digit.style.left = Math.random() * 100 + "vw";
+        digit.style.animationDuration = (4 + Math.random() * 4) + "s";
+
+        rain.appendChild(digit);
+        setTimeout(() => digit.remove(), 8000);
+    }, 120);
+}
+
+
+</script>
+
+<div id="binaryRain" aria-hidden="true"></div>
+
+<script src="/syntax.js"></script>
+<script src="/autocomplete.js"></script>
+
+</body>
+
+
+</html>
+
+

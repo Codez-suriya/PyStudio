@@ -1,0 +1,986 @@
+/* ==========================================================================
+   PyStudio — friendly, modern, accessible theme
+   Light + dark mode (follows system), responsive, reduced-motion aware.
+   Usage: <link rel="stylesheet" href="styles.css"> inside <head>
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap");
+
+/* ---------- Design tokens ---------- */
+:root {
+    --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-code: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --bg: #f6f7fb;
+    --bg-accent-1: rgba(99, 102, 241, 0.14);
+    --bg-accent-2: rgba(236, 72, 153, 0.10);
+    --surface: #ffffff;
+    --surface-2: #f1f3f9;
+    --border: #e3e6f0;
+    --text: #1e2140;
+    --text-muted: #666b8a;
+
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-contrast: #ffffff;
+    --secondary: #ec4899;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+
+    --code-bg: #14162b;
+    --code-text: #e8eaff;
+    --code-muted: #8b90b8;
+    --console-bg: #0d0f1f;
+    --console-text: #b8f5cf;
+    --console-error: #ff8f9f;
+
+    --radius-sm: 8px;
+    --radius: 14px;
+    --radius-lg: 22px;
+    --shadow-sm: 0 1px 2px rgba(30, 33, 64, 0.06), 0 1px 3px rgba(30, 33, 64, 0.06);
+    --shadow: 0 8px 24px rgba(30, 33, 64, 0.08);
+    --shadow-lg: 0 20px 50px rgba(79, 70, 229, 0.18);
+    --ring: 0 0 0 3px rgba(99, 102, 241, 0.35);
+
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0e1020;
+        --bg-accent-1: rgba(99, 102, 241, 0.22);
+        --bg-accent-2: rgba(236, 72, 153, 0.12);
+        --surface: #181b33;
+        --surface-2: #20244a;
+        --border: #2b3060;
+        --text: #eceeff;
+        --text-muted: #9ba0c9;
+        --primary: #818cf8;
+        --primary-hover: #a5b4fc;
+        --primary-contrast: #0e1020;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+        --code-bg: #0b0d1c;
+        --console-bg: #070815;
+    }
+}
+
+/* ---------- Reset & base ---------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 90px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text);
+    background:
+        radial-gradient(900px 500px at 8% -10%, var(--bg-accent-1), transparent 60%),
+        radial-gradient(800px 500px at 100% 0%, var(--bg-accent-2), transparent 60%),
+        var(--bg);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+    margin: 0 0 0.4em;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+p {
+    margin: 0 0 1em;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+::selection {
+    background: var(--primary);
+    color: var(--primary-contrast);
+}
+
+:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+    border-radius: var(--radius-sm);
+}
+
+/* ---------- App shell ---------- */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    padding: 0.75rem clamp(1rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--border);
+}
+
+.logo {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.logo p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.main-navigation {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    background: var(--surface-2);
+    border-radius: 999px;
+}
+
+.main-navigation a {
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+
+.main-navigation a:hover {
+    color: var(--text);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.language-label {
+    padding: 0.25rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: var(--font-code);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    border-radius: 999px;
+}
+
+/* ---------- Buttons ---------- */
+button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.65rem 1.1rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition),
+                background var(--transition), border-color var(--transition), filter var(--transition);
+}
+
+button:hover:not(:disabled) {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+#new-file-button,
+#run-button,
+.load-example,
+#program-input + button {
+    color: #fff;
+    background: var(--gradient);
+    border-color: transparent;
+}
+
+#new-file-button:hover:not(:disabled),
+#run-button:hover:not(:disabled),
+.load-example:hover:not(:disabled),
+#program-input + button:hover:not(:disabled) {
+    border-color: transparent;
+    filter: brightness(1.08);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+}
+
+#run-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding-inline: 1.3rem;
+}
+
+#run-button::before {
+    content: "▶";
+    font-size: 0.7em;
+}
+
+/* Stop button (created by JavaScript) */
+#run-button + button {
+    color: #fff;
+    background: var(--danger);
+    border-color: transparent;
+}
+
+#run-button + button:hover:not(:disabled) {
+    border-color: transparent;
+    filter: brightness(1.1);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+}
+
+/* ---------- Workspace ---------- */
+.workspace {
+    flex: 1;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 4vw, 2.5rem) 3rem;
+}
+
+.welcome-section {
+    text-align: center;
+    padding: clamp(1rem, 3vw, 2rem) 0 clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.welcome-section h2 {
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.welcome-section p {
+    max-width: 38rem;
+    margin: 0 auto;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--text-muted);
+}
+
+/* ---------- Editor + Output ---------- */
+.ide-workspace {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.editor-panel,
+.output-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 460px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.editor-panel:focus-within {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-lg);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.1rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+}
+
+.panel-header > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.panel-header span {
+    padding: 0.15rem 0.6rem;
+    font-family: var(--font-code);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.editor-actions,
+.output-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.editor-actions button,
+.output-actions button {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+}
+
+/* Code editor */
+.editor-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: var(--code-bg);
+}
+
+.editor-content label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#python-code {
+    flex: 1;
+    width: 100%;
+    min-height: 340px;
+    padding: 1.1rem 1.25rem;
+    font-family: var(--font-code);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    tab-size: 4;
+    color: var(--code-text);
+    caret-color: var(--secondary);
+    background: transparent;
+    border: 0;
+    outline: none;
+    resize: none;
+    white-space: pre;
+    overflow: auto;
+}
+
+#python-code::placeholder {
+    color: var(--code-muted);
+}
+
+/* ===== Theme-aware editor text selection ===== */
+
+#python-code::selection {
+    background: var(--selection-bg, var(--primary));
+    color: var(--selection-text, var(--primary-contrast));
+}
+
+#python-code::-moz-selection {
+    background: var(--selection-bg, var(--primary));
+    color: var(--selection-text, var(--primary-contrast));
+}
+
+/* Footers */
+.editor-footer,
+.console-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 1.1rem;
+    font-family: var(--font-code);
+    font-size: 0.76rem;
+    color: var(--code-muted);
+    background: color-mix(in srgb, var(--code-bg) 92%, #fff);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.console-footer {
+    background: color-mix(in srgb, var(--console-bg) 92%, #fff);
+}
+
+#editor-status::before,
+#execution-status::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background: var(--success);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--success);
+}
+
+/* Console */
+.console-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1.1rem 1.25rem;
+    min-height: 280px;
+    max-height: 520px;
+    overflow: auto;
+    font-family: var(--font-code);
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: var(--console-text);
+    background: var(--console-bg);
+}
+
+.console-content p {
+    margin: 0;
+    color: var(--code-muted);
+}
+
+.console-content pre {
+    margin: 0;
+    font: inherit;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--console-text);
+}
+
+.console-content pre[data-last-stream="stderr"] {
+    color: var(--console-error);
+}
+
+/* Program input form (created by JavaScript) */
+.console-content form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: 0.9rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.14);
+}
+
+.console-content form label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--code-muted);
+}
+
+.console-content form input {
+    flex: 1;
+    min-width: 140px;
+    padding: 0.55rem 0.8rem;
+    font-family: var(--font-code);
+    font-size: 0.88rem;
+    color: var(--code-text);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.console-content form input:focus {
+    border-color: var(--primary);
+    box-shadow: var(--ring);
+}
+
+.console-content form input::placeholder {
+    color: var(--code-muted);
+}
+
+.console-content form button {
+    padding: 0.55rem 0.9rem;
+    font-size: 0.8rem;
+}
+
+/* Scrollbars */
+.console-content,
+#python-code {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 144, 184, 0.45) transparent;
+}
+
+.console-content::-webkit-scrollbar,
+#python-code::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.console-content::-webkit-scrollbar-thumb,
+#python-code::-webkit-scrollbar-thumb {
+    background: rgba(139, 144, 184, 0.4);
+    border-radius: 999px;
+}
+
+/* ---------- Sections: examples & about ---------- */
+.examples-section,
+.about-section {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+.section-heading {
+    margin-bottom: 1.5rem;
+}
+
+.section-heading h2,
+.about-section h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+}
+
+.section-heading p {
+    color: var(--text-muted);
+}
+
+.example-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.1rem;
+}
+
+.example-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.4rem;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.example-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: var(--gradient);
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+
+.example-card:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    box-shadow: var(--shadow-lg);
+}
+
+.example-card:hover::before {
+    opacity: 1;
+}
+
+.example-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.example-card p {
+    flex: 1;
+    font-size: 0.93rem;
+    color: var(--text-muted);
+}
+
+.example-card button {
+    margin-top: 0.4rem;
+}
+
+.about-section {
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.about-section p {
+    max-width: 46rem;
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Footer ---------- */
+.app-footer {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.app-footer p {
+    margin: 0;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+    .ide-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .editor-panel,
+    .output-panel {
+        min-height: 380px;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-header {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .logo {
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+    }
+
+    .main-navigation {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .panel-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .editor-actions,
+    .output-actions {
+        justify-content: flex-start;
+    }
+
+    #python-code {
+        font-size: 0.88rem;
+    }
+}
+
+/* ---------- Accessibility ---------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+@media print {
+    .app-header,
+    .app-footer,
+    .examples-section {
+        display: none;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+    }
+}
+/* ======================================================================
+   PyStudio custom themes: Blush (default), Lavender, Mint, Midnight, Binary
+   Added to the existing PyStudio stylesheet; preserves editor/console layout.
+   ====================================================================== */
+
+:root {
+    color-scheme: light;
+    --font-ui: "Quicksand", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-code: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --bg: #fff6f2;
+    --bg-accent-1: #ffe6ef;
+    --bg-accent-2: #fdeee6;
+    --surface: rgba(255, 255, 255, 0.82);
+    --surface-2: #fff3f7;
+    --border: #ffe3ec;
+    --text: #4a2545;
+    --text-muted: #8a6b82;
+    --primary: #ff8aab;
+    --primary-hover: #ef5f8f;
+    --primary-contrast: #ffffff;
+    --secondary: #d9b8f2;
+    --success: #2fb586;
+    --danger: #e05a5a;
+    --code-bg: #fffafc;
+    --code-text: #4a2545;
+    --code-muted: #b394aa;
+    --console-bg: #fff3f7;
+    --console-text: #4a2545;
+    --console-error: #d93a63;
+    --gradient: linear-gradient(135deg, #ff8aab, #ef5f8f, #d9b8f2);
+    --ring: 0 0 0 3px rgba(255, 138, 171, 0.3);
+}
+
+
+[data-theme="lavender"] {
+    color-scheme: light;
+    --bg: #f9f5ff; --bg-accent-1: #efe6ff; --bg-accent-2: #f0e9fb;
+    --surface: rgba(255,255,255,.82); --surface-2: #f5efff; --border: #ecdcff;
+    --text: #3d2a5c; --text-muted: #8577a3;
+    --primary: #b98af0; --primary-hover: #9a5fe0; --primary-contrast: #fff;
+    --secondary: #ffd1e8; --code-bg: #fcfaff; --code-text: #3d2a5c;
+    --code-muted: #a898c4; --console-bg: #f5efff; --console-text: #3d2a5c;
+    --console-error: #cf3f7a; --gradient: linear-gradient(135deg, #b98af0, #9a5fe0, #ffd1e8);
+    --ring: 0 0 0 3px rgba(185,138,240,.3);
+}
+
+[data-theme="mint"] {
+    color-scheme: light;
+    --bg: #f4fffb; --bg-accent-1: #e2fff3; --bg-accent-2: #e9fbf0;
+    --surface: rgba(255,255,255,.84); --surface-2: #eefdf6; --border: #d7f7e9;
+    --text: #1f5a45; --text-muted: #5f9986;
+    --primary: #5fd6a8; --primary-hover: #2fb586; --primary-contrast: #123b2c;
+    --secondary: #bfe8ff; --code-bg: #fafffd; --code-text: #1f5a45;
+    --code-muted: #7fb5a2; --console-bg: #eefdf6; --console-text: #1f5a45;
+    --console-error: #d4475a; --gradient: linear-gradient(135deg, #5fd6a8, #2fb586, #bfe8ff);
+    --ring: 0 0 0 3px rgba(95,214,168,.3);
+}
+
+[data-theme="midnight"] {
+    color-scheme: dark;
+    --bg: #120b23; --bg-accent-1: #1a1230; --bg-accent-2: #20142f;
+    --surface: rgba(36,24,52,.88); --surface-2: #150e26; --border: #3a2856;
+    --text: #f3e6ff; --text-muted: #b39bd0;
+    --primary: #ff8aab; --primary-hover: #ff5f91; --primary-contrast: #241226;
+    --secondary: #4d3570; --code-bg: #150e26; --code-text: #f3e6ff;
+    --code-muted: #8f7bb0; --console-bg: #0f0a1d; --console-text: #ffd6e4;
+    --console-error: #ff7a96; --gradient: linear-gradient(135deg, #ff8aab, #ff5f91, #4d3570);
+    --ring: 0 0 0 3px rgba(255,138,171,.35);
+}
+
+[data-theme="binary"] {
+    color-scheme: dark;
+    --font-ui: "JetBrains Mono", ui-monospace, monospace;
+    --bg: #000500; --bg-accent-1: #020b02; --bg-accent-2: #001500;
+    --surface: rgba(0,10,0,.78); --surface-2: rgba(0,0,0,.88); --border: rgba(0,255,65,.28);
+    --text: #b6ffbf; --text-muted: #62b86d;
+    --primary: #00ff41; --primary-hover: #00cc33; --primary-contrast: #001a07;
+    --secondary: #00ff41; --success: #00ff66; --danger: #ff4d6d;
+    --code-bg: rgba(0,8,0,.88); --code-text: #9dffb0; --code-muted: #3f8f4d;
+    --console-bg: rgba(0,0,0,.9); --console-text: #00ff66; --console-error: #ff4d6d;
+    --gradient: linear-gradient(135deg, #00ff41, #00cc33);
+    --ring: 0 0 0 3px rgba(0,255,65,.35);
+}
+
+/* Theme picker */
+.header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+.theme-picker { display: flex; align-items: center; gap: 8px; }
+.theme-picker .swatch {
+    width: 20px; height: 20px; min-width: 20px; padding: 0;
+    border: 2px solid transparent; border-radius: 50%; cursor: pointer;
+    box-shadow: none; line-height: 1; flex: 0 0 auto;
+}
+.theme-picker .swatch:hover { transform: scale(1.15); }
+.theme-picker .swatch.active { outline: 2px solid var(--text); outline-offset: 3px; }
+.theme-picker .swatch::after { content: none; }
+
+/* Theme transitions and binary rain */
+body, .app-header, .editor-panel, .output-panel, .panel-header,
+.editor-footer, .console-footer, .console-content, button {
+    transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+#binaryRain { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; opacity: 0; }
+[data-theme="binary"] #binaryRain { opacity: 1; }
+.binary-digit {
+    position: absolute; top: -30px; color: #00ff66; font-family: monospace;
+    font-size: 14px; font-weight: 700; text-shadow: 0 0 8px #00ff66;
+    opacity: .75; animation: binaryFall linear forwards;
+}
+@keyframes binaryFall {
+    from { transform: translateY(-40px); opacity: 0; }
+    10% { opacity: .8; }
+    90% { opacity: .5; }
+    to { transform: translateY(110vh); opacity: 0; }
+}
+[data-theme="binary"] body::before, [data-theme="binary"] body::after { display: none; }
+[data-theme="binary"] .app-header,
+[data-theme="binary"] .panel-header,
+[data-theme="binary"] .editor-footer,
+[data-theme="binary"] .console-footer { background: rgba(0,255,65,.06); }
+[data-theme="binary"] #run-button,
+[data-theme="binary"] #program-input + button {
+    background: transparent; color: var(--primary); border: 1px solid var(--primary);
+    box-shadow: 0 0 14px rgba(0,255,65,.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .binary-digit { animation: none; display: none; }
+    body, button, .app-header, .editor-panel, .output-panel { transition: none; }
+}
+
+
+/* ===== Fix: Solid, opaque header ===== */
+.app-header {
+    background: #001a08 !important;
+    background-image: none !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    isolation: isolate;
+}
+
+/* Remove decorative glow behind the header */
+.app-header::before,
+.app-header::after {
+    content: none !important;
+    display: none !important;
+}
+
+/* Keep the logo and theme circles above the background */
+.app-header .logo,
+.app-header .header-actions,
+.app-header .theme-picker {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* ===== Fix theme colors on action buttons ===== */
+
+/* Use the selected theme's accent color */
+#run-button,
+#send-input-button,
+#output button[type="submit"],
+#program-input + button,
+.output-panel button[type="submit"] {
+    background: var(--primary) !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: 1px solid var(--primary) !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+/* Hover state */
+#run-button:hover,
+#send-input-button:hover,
+#output button[type="submit"]:hover,
+#program-input + button:hover,
+.output-panel button[type="submit"]:hover {
+    filter: brightness(0.92) !important;
+}
+
+/* Disabled state */
+#run-button:disabled {
+    opacity: 0.65 !important;
+    cursor: not-allowed;
+}
+
+
+/* ===== PyStudio selection colors for all themes ===== */
+
+/* Blush */
+:root {
+    --selection-bg: #ffc2d6;
+    --selection-text: #4a2545;
+}
+
+/* Lavender */
+:root[data-theme="lavender"] {
+    --selection-bg: #d8c2ff;
+    --selection-text: #3d2a5c;
+}
+
+/* Mint */
+:root[data-theme="mint"] {
+    --selection-bg: #b9f2dc;
+    --selection-text: #1f5a45;
+}
+
+/* Midnight */
+:root[data-theme="midnight"] {
+    --selection-bg: #563b79;
+    --selection-text: #ffffff;
+}
+
+/* Binary */
+:root[data-theme="binary"] {
+    --selection-bg: #064d1b;
+    --selection-text: #00ff66;
+}
+
+/* ===== Force theme-aware editor selection ===== */
+
+#python-code {
+    -webkit-tap-highlight-color: transparent;
+}
+
+#python-code::selection,
+#python-code::-moz-selection {
+    background: var(--selection-bg) !important;
+    color: var(--selection-text) !important;
+}
+
