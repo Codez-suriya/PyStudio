@@ -471,6 +471,74 @@
             suppressNext = false;
         }
 
+
+
+        /* --- auto-pairing --- */
+        const PAIRS = {
+            "(": ")",
+            "[": "]",
+            "{": "}",
+            '"': '"',
+            "'": "'"
+        };
+
+        editor.addEventListener("keydown", event => {
+            if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const value = editor.value;
+
+            // Delete both characters when backspacing between an empty pair.
+            if (
+                event.key === "Backspace" &&
+                start === end &&
+                start > 0 &&
+                PAIRS[value[start - 1]] === value[start]
+            ) {
+                event.preventDefault();
+                editor.setRangeText("", start - 1, start + 1, "end");
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
+                return;
+            }
+
+            // Skip over a closing character that is already present.
+            if (
+                [")", "]", "}", '"', "'"].includes(event.key) &&
+                start === end &&
+                value[start] === event.key
+            ) {
+                event.preventDefault();
+                editor.setSelectionRange(start + 1, start + 1);
+                return;
+            }
+
+            // Insert matching pairs.
+            if (Object.prototype.hasOwnProperty.call(PAIRS, event.key)) {
+                event.preventDefault();
+
+                const closing = PAIRS[event.key];
+                const selectedText = value.slice(start, end);
+                const insertion = event.key + selectedText + closing;
+
+                editor.setRangeText(insertion, start, end, "end");
+
+                if (selectedText.length > 0) {
+                    editor.setSelectionRange(
+                        start + 1,
+                        start + 1 + selectedText.length
+                    );
+                } else {
+                    editor.setSelectionRange(start + 1, start + 1);
+                }
+
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
+
+
+
+
         /* --- events --- */
         // Capture on document so we run before syntax.js's Tab/Enter handlers.
         document.addEventListener("keydown", event => {
