@@ -73,48 +73,98 @@ def install_linux(script_dir: str) -> int:
 
 
 def install_windows(script_dir: str) -> int:
-    """Download (if needed) and run install.ps1, then run.ps1."""
-    install_script = os.path.join(script_dir, "install.ps1")
-    run_script = os.path.join(script_dir, "run.ps1")
+    """Ask for parent directory, create PyStudio folder, and run the installer."""
 
-    # 1. Download install.ps1 if missing
-    if not os.path.isfile(install_script):
-        url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/{BRANCH}/install.ps1"
-        download_file(url, install_script)
+    default_parent = os.path.join(os.path.expanduser("~"), "Downloads")
 
-    # 2. Set Execution Policy (bypass for this session, no admin needed)
-    print("[*] Setting execution policy for this session...")
-    subprocess.run(
-        ["powershell", "-NoProfile", "-Command", "Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force"],
-        check=False
+    print("\n  PyStudio Windows Installer")
+    print("-----------------------------")
+    
+    try:
+        user_path = input(
+            f"\nEnter the parent directory to install PyStudio\n"
+            f"(press Enter for default: {default_parent}): "
+        ).strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\nInstallation cancelled.")
+        return 1
+
+    # 1. Validate the user-provided parent directory.
+    if user_path:
+        parent_dir = os.path.abspath(
+            os.path.expandvars(os.path.expanduser(user_path))
+        )
+        
+        if not os.path.isdir(parent_dir):
+            print(f"\n[!] Path does not exist: {parent_dir}")
+            print(f"[*] Falling back to default: {default_parent}")
+            parent_dir = default_parent
+    else:
+        parent_dir = default_parent
+
+    # 2. Create the 'PyStudio' folder inside the parent directory.
+    install_dir = os.path.join(parent_dir, "PyStudio")
+    
+    try:
+        os.makedirs(install_dir, exist_ok=True)
+    except OSError as e:
+        print(f"\n[ERROR] Cannot create PyStudio folder in '{parent_dir}': {e}", file=sys.stderr)
+        return 1
+
+    print(f"\n[*] Installing into: {install_dir}")
+
+    install_script = os.path.join(install_dir, "install.ps1")
+    run_script = os.path.join(install_dir, "run.bat") # <-- Updated to run.bat
+
+    # 3. Download install.ps1 into the PyStudio folder
+    url = (
+        f"https://raw.githubusercontent.com/"
+        f"{REPO_OWNER}/{REPO_NAME}/{BRANCH}/install.ps1"
     )
 
-    # 3. Run install.ps1
+    print("[*] Downloading install.ps1...")
+    try:
+        download_file(url, install_script)
+    except Exception as e:
+        print(f"[ERROR] Download failed: {e}", file=sys.stderr)
+        return 1
+
+    # 4. Execute install.ps1
     print("[*] Starting Windows installation...")
-    rc = run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "install.ps1"], cwd=script_dir)
-    
+    rc = run(
+        [
+            "powershell",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            install_script,
+            "-InstallDir",
+            install_dir  # Pass the specific PyStudio folder
+        ],
+        cwd=install_dir
+    )
+
     if rc != 0:
-        print(f"  ERROR: install.ps1 failed with code {rc}", file=sys.stderr)
+        print(f"\n[ERROR] install.ps1 failed with code {rc}", file=sys.stderr)
         return rc
 
-    # 4. Ask to launch (if run.ps1 was generated)
+    # 5. Ask whether to launch PyStudio
     if os.path.isfile(run_script):
-        print("\n  Launch PyStudio now? [Y/n] ", end="")
         try:
-            ans = input().strip().lower()
+            ans = input("\nLaunch PyStudio now? [Y/n] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             ans = "n"
-            
-        if ans in ("", "y", "yes"):
-            print("[*] Launching...")
-            return run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "run.ps1"], cwd=script_dir)
-        else:
-            print("  Run it later with: .\\run.ps1")
-    else:
-        print("  run.ps1 not found; skipping launch.")
-    
-    return 0
 
+        if ans in ("", "y", "yes"):
+            print("[*] Launching PyStudio...")
+            return run(["cmd", "/c", "run.bat"], cwd=install_dir)
+        else:
+            print(f"Run it later by double-clicking:\n  {run_script}")
+    else:
+        print("[!] run.bat not found; skipping launch.")
+
+    return 0
 
 def main() -> int:
     script_dir = os.path.dirname(os.path.abspath(__file__))
