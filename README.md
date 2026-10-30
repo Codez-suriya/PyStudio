@@ -101,11 +101,7 @@ Follow the instructions displayed by the installer.
 
 ### 4. Launch PyStudio
 
-After installation, open the installed PyStudio directory and run its Windows launcher:
-
-```powershell
-.\run.ps1
-```
+After installation, open the installed PyStudio directory and run its Windows launcher by double clicking the run.bat.
 
 The launcher asks for a port (default: `8000`) and how PyStudio should be accessed:
 
