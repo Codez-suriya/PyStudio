@@ -44,39 +44,64 @@ Choose your operating system below to see the installation instructions.
 | **Operating System** | Windows 10 / 11 |
 | **Python** | 3.8 or newer |
 | **PowerShell** | 5.1 or newer |
+| **curl** | Required to download the installer |
 | **Internet** | Required during installation |
-| **Dependencies** | Flask, Uvicorn, asgiref |
 
-### 2. Download PyStudio
+### 2. Check Python and curl
 
-Open PowerShell and clone the repository:
-
-```powershell
-git clone https://github.com/Codez-suriya/PyStudio.git
-cd PyStudio
-```
-
-### 3. Install PyStudio
-
-Run the PowerShell installer:
+Open PowerShell and check Python:
 
 ```powershell
-.\install.ps1
+python --version
 ```
 
-The installer prepares the Python environment and installs the required dependencies.
-
-If PowerShell blocks script execution, allow scripts for the current PowerShell session:
+If Python is not found, install it using Windows Package Manager:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+winget install Python.Python.3.12
 ```
 
-Then run the installer again.
+Restart PowerShell and verify:
+
+```powershell
+python --version
+```
+
+Check whether curl is available:
+
+```powershell
+curl.exe --version
+```
+
+Windows 10 and 11 normally include curl.
+
+If curl is missing, install it using:
+
+```powershell
+winget install cURL.cURL
+```
+
+Restart PowerShell after installation.
+
+### 3. Download and Install PyStudio
+
+Download the master installer directly from GitHub:
+
+```powershell
+curl.exe -fL https://raw.githubusercontent.com/Codez-suriya/PyStudio/main/install.py -o install.py
+```
+
+Run the master installer:
+
+```powershell
+py -3 install.py
+```
+
+Follow the instructions displayed by the installer.
 
 ### 4. Launch PyStudio
 
-After installation, run:
+After installation, open the installed PyStudio directory and run its Windows launcher:
 
 ```powershell
 .\run.ps1
@@ -114,45 +139,106 @@ http://localhost:8000
 | **Operating System** | Linux |
 | **Python** | 3.8 or newer |
 | **Shell** | Bash |
+| **curl** | Required to download the installer |
 | **Internet** | Required during installation |
-| **Dependencies** | Git, curl, Flask, Uvicorn, asgiref |
 
-The installer supports common package managers, including APT, DNF, Pacman, Zypper, and APK.
+### 2. Check Python and curl
 
-### 2. Download PyStudio
-
-Open your terminal and clone the repository:
+Open your terminal and check Python:
 
 ```bash
-git clone https://github.com/Codez-suriya/PyStudio.git
-cd PyStudio
+python3 --version
 ```
 
-### 3. Install PyStudio
+If Python is not installed, use the command for your Linux distribution.
 
-Make the installer executable:
+**Ubuntu / Debian:**
 
 ```bash
-chmod +x install.sh
+sudo apt update && sudo apt install -y python3
 ```
 
-Run the installer:
+**Fedora:**
 
 ```bash
-./install.sh
+sudo dnf install -y python3
 ```
 
-The installer automatically:
+**Arch Linux / Ryoku:**
 
-- Checks for Git and curl.
-- Detects or installs a compatible Python runtime.
-- Creates a virtual environment (`.venv`).
-- Installs the required Python packages.
-- Checks the application launcher.
+```bash
+sudo pacman -S --needed python
+```
+
+**openSUSE:**
+
+```bash
+sudo zypper install python3
+```
+
+**Alpine Linux:**
+
+```bash
+sudo apk add python3
+```
+
+Check whether curl is available:
+
+```bash
+curl --version
+```
+
+If curl is missing, install it using the appropriate command.
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt install -y curl
+```
+
+**Fedora:**
+
+```bash
+sudo dnf install -y curl
+```
+
+**Arch Linux / Ryoku:**
+
+```bash
+sudo pacman -S --needed curl
+```
+
+**openSUSE:**
+
+```bash
+sudo zypper install curl
+```
+
+**Alpine Linux:**
+
+```bash
+sudo apk add curl
+```
+
+### 3. Download and Install PyStudio
+
+Download the master installer directly from GitHub:
+
+```bash
+curl -fL https://raw.githubusercontent.com/Codez-suriya/PyStudio/main/install.py -o install.py
+```
+
+Run the master installer:
+
+```bash
+python3 install.py
+```
+
+Follow the instructions displayed by the installer.
 
 ### 4. Launch PyStudio
 
-Run:
+After installation, open the installed PyStudio directory and run:
 
 ```bash
 ./run.sh
@@ -239,7 +325,7 @@ PyStudio/
 │
 ├── requirements.txt       # Python dependencies
 │
-├── install.py             # Cross-platform installer launcher
+├── install.py             # Cross-platform master installer
 ├── install.ps1            # Windows installer
 ├── install.sh             # Linux installer
 │
@@ -265,20 +351,19 @@ These dependencies are installed automatically by the platform installer.
 
 ## 🛠️ Troubleshooting
 
-### Python is not recognized on Windows
+### Python is not recognized
 
-Check whether Python is installed from PowerShell:
+Make sure Python is installed and available in your system PATH. Restart your terminal after installation.
 
-```powershell
-python --version
-```
+### curl is not recognized
 
-If the command is unavailable, install Python and ensure it is available in your system PATH.
+Install curl using the instructions in your operating system's installation section.
 
 ### Installation fails
 
 - Check your internet connection.
 - Verify that Python 3.8 or newer is available.
+- Verify that curl is working.
 - Read the error message printed by the installer.
 
 ### PyStudio does not start
