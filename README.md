@@ -206,8 +206,8 @@ Programs can also receive input through the application interface.
 PyStudio can be accessed from other devices connected to the same local network.
 
 1. Connect your computer and the other device to the same Wi-Fi network.
-2. Start PyStudio using the launcher.
-3. Choose LAN exposure on Windows, or use the LAN address displayed by the Linux launcher.
+2. Start PyStudio using the appropriate operating system launcher.
+3. Enable LAN access using the launcher's options.
 4. Open the displayed network address in the other device's browser.
 
 Example:
@@ -218,7 +218,7 @@ http://192.168.1.10:8000
 
 The address above is only an example. Use the actual address displayed by your launcher.
 
-**Security note:** LAN access allows other devices on your network to reach the application. Only use it on networks you trust. PyStudio is a local development project, not a security sandbox for untrusted code. Avoid exposing it directly to the public internet.
+**Security note:** LAN access allows other devices on your network to reach the application. Only use it on networks you trust. PyStudio is not a security sandbox for untrusted code. Avoid exposing it directly to the public internet.
 
 ---
 
@@ -267,7 +267,7 @@ These dependencies are installed automatically by the platform installer.
 
 ### Python is not recognized on Windows
 
-Check whether Python is installed:
+Check whether Python is installed from PowerShell:
 
 ```powershell
 python --version
@@ -279,36 +279,13 @@ If the command is unavailable, install Python and ensure it is available in your
 
 - Check your internet connection.
 - Verify that Python 3.8 or newer is available.
-- Run the installer again.
 - Read the error message printed by the installer.
 
 ### PyStudio does not start
 
-Make sure installation completed successfully and the virtual environment exists.
-
-On Windows, run:
-
-```powershell
-.\install.ps1
-```
-
-Then:
-
-```powershell
-.\run.ps1
-```
-
-On Linux, run:
-
-```bash
-./install.sh
-```
-
-Then:
-
-```bash
-./run.sh
-```
+- Verify that installation completed successfully.
+- Check that the project virtual environment exists.
+- Read the error message printed in your terminal.
 
 ### Port is already in use
 
