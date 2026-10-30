@@ -649,8 +649,7 @@ try {
         $script:C_DIM_ORANGE, `
         "$($script:C_BOLD)$($script:C_AMBER)", $projectDir)
 
-    # Generate run.ps1 next to the project
-    Write-RunScript -ProjectDir $projectDir
+    
 
     $venvDir    = Join-Path $projectDir '.venv'
     $venvPython = Join-Path $venvDir 'Scripts\python.exe'
@@ -714,9 +713,11 @@ try {
         }
     }
 
-    $runPs1 = Join-Path $projectDir 'run.ps1'
-    if (Test-Path $runPs1) {
-        Write-Ok 'run.ps1 is ready.'
+    $runBat = Join-Path $projectDir 'run.bat'
+    if (Test-Path $runBat) {
+        Write-Ok 'run.bat is ready.'
+    } else {
+        Write-Warn 'run.bat is missing from the project files!'
     }
 
     Write-SectionHeader 'INSTALLATION COMPLETE' $script:C_GOLD
@@ -730,7 +731,7 @@ try {
     Write-Host ''
     Write-Host ("  {0}Start PyStudio{1}" -f "$($script:C_BOLD)$($script:C_BRIGHT_WHITE)", $script:C_RESET)
     Write-Host ''
-    Write-Host ("    {0}>{1} {2}.\run.ps1{3}" -f `
+    Write-Host ("    {0}>{1} {2}.\run.bat{3}" -f `
         $script:C_AMBER, $script:C_RESET, "$($script:C_BOLD)$($script:C_GOLD)", $script:C_RESET)
     Write-Host ''
 
@@ -763,8 +764,8 @@ try {
         Write-Host ''
         Write-Host ("  {0}Launching PyStudio...{1}" -f "$($script:C_BOLD)$($script:C_AMBER)", $script:C_RESET)
         Write-Host ''
-        if (Test-Path $runPs1) {
-            & powershell -NoProfile -ExecutionPolicy Bypass -File $runPs1
+        if (Test-Path $runBat) {
+            & cmd.exe /c $runBat
         } else {
             Push-Location $projectDir
             try { & $venvPython -m uvicorn 'app:asgi_app' }
@@ -773,7 +774,7 @@ try {
     } else {
         Write-Host ''
         Write-Host ("  {0}PyStudio is installed and ready whenever you are.{1}" -f $script:C_BRIGHT_WHITE, $script:C_RESET)
-        Write-Host ("  {0}Run it with:{1} .\run.ps1" -f $script:C_AMBER, $script:C_RESET)
+        Write-Host ("  {0}Run it by double-clicking:{1} run.bat" -f $script:C_AMBER, $script:C_RESET)
         Write-Host ''
     }
 
