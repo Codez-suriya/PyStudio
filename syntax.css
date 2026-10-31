@@ -80,6 +80,22 @@
     --tok-interp:    #5cffd1;
 }
 
+/* Dune: dark coffee editor, so tokens use light palette tones */
+[data-theme="dune"] {
+    --tok-keyword:   #ff6b9d;
+    --tok-string:    #7fe0d4;
+    --tok-number:    #ffb199;
+    --tok-comment:   #9c8b7a;
+    --tok-func:      #e3c9ab;
+    --tok-class:     #ffd08a;
+    --tok-builtin:   #5eead4;
+    --tok-const:     #ffb199;
+    --tok-decorator: #ff9ec0;
+    --tok-operator:  #b7a692;
+    --tok-self:      #ff9ec0;
+    --tok-interp:    #5eead4;
+}
+
 /* ---------- Editor overlay ---------- */
 .code-editor {
     --ed-font-size: 0.95rem;

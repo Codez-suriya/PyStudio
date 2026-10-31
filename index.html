@@ -46,6 +46,10 @@
             <button class="swatch" data-theme="binary"
                 style="background:#00ff41" aria-label="Binary theme"
                 title="Binary" type="button"></button>
+
+            <button class="swatch" data-theme="dune"
+                style="background:linear-gradient(135deg,#0d9488 0 33%,#e3c9ab 33% 66%,#ff6b9d 66%)"
+                aria-label="Dune theme" title="Dune" type="button"></button>
         </div>
     </div>
 </header>
@@ -416,7 +420,7 @@ const rain = document.getElementById("binaryRain");
 if (picker) {
     function applyTheme(theme) {
         const selected = [
-            "blush", "lavender", "mint", "midnight", "binary"
+            "blush", "lavender", "mint", "midnight", "binary", "dune"
         ].includes(theme) ? theme : "blush";
 
         if (selected === "blush") {
@@ -522,14 +526,15 @@ document.addEventListener("keydown", event => {
         return;
     }
 
-    // Alt + 1–5: Switch themes
+    // Alt + 1–6: Switch themes
     if (event.altKey && !event.ctrlKey && !event.metaKey) {
         const themes = {
             "1": "blush",
             "2": "lavender",
             "3": "mint",
             "4": "midnight",
-            "5": "binary"
+            "5": "binary",
+            "6": "dune"
         };
 
         const theme = themes[key];

@@ -831,6 +831,68 @@ button:disabled {
     --ring: 0 0 0 3px rgba(0,255,65,.35);
 }
 
+/* Dune — warm sand & beige surfaces, coffee ink, teal action, peach/pink accents.
+   Palette: Sand #E3C9AB · Beige #D6B98A · Grey #A3A3A3 · Teal #0D9488 ·
+            Coffee #6F4E37 · Slate #475569 · Fog #9CA3AF · Peach #FFB199 · Pink #FF6B9D */
+[data-theme="dune"] {
+    color-scheme: light;
+    --bg: #f7efe4; --bg-accent-1: rgba(255,177,153,.34); --bg-accent-2: rgba(13,148,136,.14);
+    --surface: rgba(255,251,245,.88); --surface-2: #f1e4d1; --border: #e3c9ab;
+    --text: #3e2c1f; --text-muted: #7a6350;
+    --primary: #0d9488; --primary-hover: #0b7a70; --primary-contrast: #ffffff;
+    --secondary: #ff6b9d; --success: #0d9488; --danger: #d6455f; --warning: #d6b98a;
+    --code-bg: #2b2520; --code-text: #f3e6d3; --code-muted: #9c8b7a;
+    --console-bg: #231e1a; --console-text: #ffd3c4; --console-error: #ff8fb0;
+    --shadow-sm: 0 1px 2px rgba(111,78,55,.10), 0 1px 3px rgba(111,78,55,.08);
+    --shadow: 0 10px 28px rgba(111,78,55,.14);
+    --shadow-lg: 0 22px 54px rgba(13,148,136,.22);
+    --gradient: linear-gradient(135deg, #0d9488 0%, #ffb199 55%, #ff6b9d 100%);
+    --ring: 0 0 0 3px rgba(13,148,136,.35);
+    --selection-bg: #ffb199;
+    --selection-text: #3e2c1f;
+}
+
+/* Dune: replace the forced dark-green header with a sand-to-peach bar */
+[data-theme="dune"] .app-header {
+    background: linear-gradient(120deg, #e3c9ab 0%, #f0d6bd 55%, #ffb199 120%) !important;
+    border-bottom: 1px solid #d6b98a;
+    box-shadow: 0 6px 20px rgba(111,78,55,.14);
+}
+[data-theme="dune"] .app-header h1 { color: #3e2c1f; }
+[data-theme="dune"] .app-header p { color: #6f4e37; }
+[data-theme="dune"] .app-header .theme-picker .swatch.active { outline-color: #0d9488; }
+[data-theme="dune"] .app-header .theme-picker .swatch { border-color: rgba(255,255,255,.7); }
+
+/* Dune: punchier headline gradient (the default one fades out on a sand background) */
+[data-theme="dune"] .welcome-section h2 {
+    background: linear-gradient(100deg, #0f766e 0%, #0d9488 35%, #e8618f 75%, #ff6b9d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Dune: soft frosted panels with a teal top edge, pink hover glow on buttons */
+[data-theme="dune"] .editor-panel,
+[data-theme="dune"] .output-panel {
+    border-top: 3px solid #0d9488;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+[data-theme="dune"] .panel-header,
+[data-theme="dune"] .editor-footer,
+[data-theme="dune"] .console-footer { background: rgba(227,201,171,.35); }
+[data-theme="dune"] #run-button,
+[data-theme="dune"] #send-input-button,
+[data-theme="dune"] #program-input + button,
+[data-theme="dune"] .output-panel button[type="submit"] {
+    background: #0f766e !important;
+    border-color: #0f766e !important;
+}
+[data-theme="dune"] #run-button:hover,
+[data-theme="dune"] #send-input-button:hover {
+    box-shadow: 0 8px 22px rgba(255,107,157,.35) !important;
+}
+
 /* Theme picker */
 .header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
 .theme-picker { display: flex; align-items: center; gap: 8px; }

@@ -106,6 +106,16 @@
     box-shadow: 0 0 18px rgba(0, 255, 65, 0.25);
 }
 
+/* Dune theme: dark coffee popup so the light token colors stay readable */
+[data-theme="dune"] .ac-popup {
+    background: #2b2520;
+    color: #f3e6d3;
+    border-color: #6f4e37;
+    box-shadow: 0 12px 30px rgba(62, 44, 31, 0.35);
+}
+[data-theme="dune"] .ac-detail { color: #9c8b7a; }
+[data-theme="dune"] .ac-label b { color: #ffb199; }
+
 .ac-popup::-webkit-scrollbar { width: 8px; }
 .ac-popup::-webkit-scrollbar-thumb {
     background: rgba(139, 144, 184, 0.4);
