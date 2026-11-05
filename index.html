@@ -71,6 +71,45 @@
             <!-- Editor and Output Panels -->
             <section class="ide-workspace" id="editor">
 
+                <!-- File Explorer Panel -->
+                <aside class="file-explorer" aria-labelledby="explorer-heading"
+                       role="tree" aria-label="File Explorer">
+                    <div class="panel-header">
+                        <div>
+                            <h2 id="explorer-heading">Explorer</h2>
+                        </div>
+                        <div class="explorer-actions">
+                            <button type="button" id="new-file-button" aria-label="New file"
+                                    title="New File (Ctrl+Shift+N)">
+                                New
+                            </button>
+                            <button type="button" id="refresh-explorer" aria-label="Refresh"
+                                    title="Refresh (Ctrl+R)">
+                                ⟳
+                            </button>
+                        </div>
+                    </div>
+                    <div class="explorer-body">
+                        <div id="explorer-tree" role="tree">
+                            <div class="explorer-placeholder">
+                                <p>No files yet.</p>
+                                <p class="explorer-placeholder-hint">Create a new file to get started.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-header secondary">
+                        <div>
+                            <h3>Recent Files</h3>
+                        </div>
+                    </div>
+                    <div class="explorer-body" id="explorer-recent" role="tree">
+                        <div class="explorer-placeholder">
+                            <p>No recent files.</p>
+                        </div>
+                    </div>
+                </aside>
+
+
                 <!-- Code Editor Panel -->
                 <section class="editor-panel" aria-labelledby="editor-heading">
 
@@ -185,6 +224,12 @@ let currentRunId = null;
 let isRunning = false;
 let pollToken = 0;
 let hasExecutedCode = false;
+
+/* File Explorer state */
+let WORKSPACE = { open_files: [], recent_files: [] };
+try {
+    WORKSPACE = JSON.parse(localStorage.getItem("pystudio-workspace") || "{}");
+} catch {}
 
 const outputText = document.createElement("pre");
 outputText.textContent = "";
@@ -415,7 +460,7 @@ document.getElementById("clear-output-button")
 
 /* ===== PyStudio Theme Switcher ===== */
 const picker = document.getElementById("themePicker");
-const rain = document.getElementById("binaryRain");
+const binaryRain = document.getElementById("binaryRain");
 
 if (picker) {
     function applyTheme(theme) {
@@ -552,6 +597,528 @@ document.addEventListener("keydown", event => {
     }
 });
 
+
+/* ===== PyStudio File Explorer ===== */
+
+/* ---- Explorer state ---- */
+const explorerTree = document.getElementById("explorer-tree");
+const explorerRecent = document.getElementById("explorer-recent");
+const newFileButton = document.getElementById("new-file-button");
+const refreshButton = document.getElementById("refresh-explorer");
+const confirmDeleteEl = document.getElementById("confirm-delete");
+
+let allFiles = new Map();          /* path -> node data */
+let openedFiles = [];              /* [{path, name, content, saved}] */
+let selectedFile = null;
+let contextTarget = null;
+
+const PLACEHOLDER = `
+    <div class="explorer-placeholder">
+        <p>No files yet.</p>
+        <p class="explorer-placeholder-hint">Create a new file to get started.</p>
+    </div>`;
+
+const PLACEHOLDER_RECENT = `
+    <div class="explorer-placeholder">
+        <p>No recent files.</p>
+    </div>`;
+
+/* ---- Context menu ---- */
+const ctxMenu = document.createElement("div");
+ctxMenu.className = "file-context-menu";
+ctxMenu.innerHTML = `
+    <button data-action="save">Save</button>
+    <button data-action="close">Close</button>
+    <button data-action="delete" style="color:var(--danger)">Delete</button>
+    <button data-action="new" id="ctx-new-submenu">New in here ▸</button>
+`;
+document.body.appendChild(ctxMenu);
+
+ctxMenu.addEventListener("click", async event => {
+    const action = event.target.dataset.action;
+    if (!action) return;
+
+    if (action === "delete") {
+        await handleDelete(contextTarget);
+        return;
+    }
+    if (action === "close") {
+        closeFile(contextTarget.path);
+        hideContextMenu();
+        return;
+    }
+    if (action === "new") {
+        handleNewInFolder(contextTarget.path);
+        return;
+    }
+    if (action === "save") {
+        await saveFile(contextTarget.path);
+        hideContextMenu();
+        return;
+    }
+});
+
+function showContextMenu(x, y, node) {
+    contextTarget = node;
+    ctxMenu.style.left = x + "px";
+    ctxMenu.style.top = y + "px";
+    ctxMenu.style.display = "block";
+    const actionSelector = node.data.type === 'folder' ? 'new' : 'save';
+    ctxMenu.querySelector(`[data-action="${actionSelector}"]`).style.display = "block";
+    ctxMenu.querySelector(`[data-action="new"]`).style.display = node.data.type === 'folder' ? "block" : "none";
+    ctxMenu.querySelector(`[data-action="close"]`).style.display =
+        node.data.type === "file" && isOpened(node.path) ? "block" : "none";
+    ctxMenu.querySelector(`[data-action="delete"]`).style.display = "block";
+    document.addEventListener("click", hideContextMenu, { once: true });
+}
+
+function hideContextMenu() {
+    ctxMenu.style.display = "none";
+    contextTarget = null;
+}
+
+document.addEventListener("click", event => {
+    if (!ctxMenu.contains(event.target) && !event.target.closest(".tree-item")) {
+        hideContextMenu();
+    }
+});
+
+/* ---- Root folder (workspace) ---- */
+const workspacePath = "workspace";
+const ROOT_NODE = {
+    type: "folder", name: "workspace", path: workspacePath,
+    data: { type: "folder", name: "workspace", path: workspacePath },
+    children: [],
+    expanded: false
+};
+ROOT_NODE.children = [];
+ROOT_NODE.data.children = ROOT_NODE.children;
+
+function isOpened(path) {
+    return openedFiles.some(f => f.path === path);
+}
+
+function openFileFor(path) {
+    const existing = openedFiles.find(f => f.path === path);
+    if (existing) {
+        selectFile(path);
+        return existing;
+    }
+    const content = allFiles.get(path)?.content ?? "";
+    const newFile = { path, name: allFiles.get(path)?.name ?? path, content, saved: true };
+    openedFiles.push(newFile);
+    return newFile;
+}
+
+/* ---- Load files from the API ---- */
+async function loadExplorerFiles() {
+    try {
+        const response = await fetch("/api/files");
+        const data = await response.json();
+        allFiles.clear();
+        const tree = data.tree || [];
+
+        function walk(node, parent, items, prefix) {
+            if (items.length === 0 && parent === ROOT_NODE) {
+                explorerTree.innerHTML = PLACEHOLDER;
+            }
+            if (items.length === 0) return;
+            for (const item of items) {
+                const fullPath = parent === ROOT_NODE ? item.path : parent.path + "/" + item.path;
+                if (item.type === "file") {
+                    allFiles.set(fullPath, { name: item.name, path: fullPath });
+                }
+                const childNode = {
+                    type: item.type,
+                    name: item.name,
+                    path: fullPath,
+                    data: Object.assign({ path: fullPath, children: [] }, item),
+                    children: [],
+                    expanded: false
+                };
+                if (item.type === "file") {
+                    childNode.data.content = item.content || "";
+                } else {
+                    walk(childNode, childNode, item.children || [], prefix);
+                    childNode.data.children = childNode.children;
+                }
+                parent.children.push(childNode);
+            }
+            refreshExplorer();
+        }
+
+        walk(ROOT_NODE, ROOT_NODE, tree, "");
+        refreshExplorer();
+
+        /* Load recently opened files */
+        const recent = data.open_files || [];
+        showRecentFiles(recent);
+    } catch (err) {
+        console.error("Failed to load files:", err);
+        explorerTree.innerHTML = PLACEHOLDER;
+    }
+}
+
+async function createNewFile(name) {
+    const path = name.startsWith("/") ? name : ROOT_NODE.path + "/" + name;
+    if (allFiles.has(path)) {
+        alert("A file or folder with that name already exists.");
+        return;
+    }
+    try {
+        const response = await fetch("/api/files/write", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path, content: "" })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            alert(result.error || "Failed to create file.");
+            return;
+        }
+        allFiles.set(path, { name: name, path: path });
+        await loadExplorerFiles();
+        const node = findNodeByPath(ROOT_NODE, path);
+        if (node) {
+            node.expanded = true;
+            refreshExplorer();
+        }
+        const opened = openFileFor(path);
+        selectedFile = opened.path;
+        selectFile(path);
+        editor.focus();
+    } catch (err) {
+        console.error(err);
+        alert("Could not create file.");
+    }
+}
+
+/* ---- Render ---- */
+function renderTree(node, container, level, prefix = "") {
+    container.innerHTML = "";
+    if (node.children.length === 0) return;
+
+    for (const child of node.children) {
+        const item = document.createElement("div");
+        item.className = "tree-item" + (child.expanded ? " expanded" : "");
+        item.dataset.path = child.path;
+        item.dataset.type = child.type;
+        item.setAttribute("role", child.type === "folder" ? "treeitem" : "treeitem");
+        item.setAttribute("aria-expanded", child.expanded ? "true" : "false");
+
+        const arrow = document.createElement("span");
+        arrow.className = "tree-arrow";
+        arrow.textContent = child.type === "folder" ? "▶" : "";
+
+        const label = document.createElement("span");
+        label.className = "tree-label";
+        label.textContent = child.name;
+        if (child.type === "file") {
+            label.style.opacity = isOpened(child.path) ? "0.7" : "1";
+            label.textContent = (isOpened(child.path) ? "📄 " : "") + child.name;
+        }
+
+        item.appendChild(arrow);
+        item.appendChild(label);
+
+        const childrenContainer = document.createElement("div");
+        childrenContainer.className = "tree-children";
+
+        if (child.type === "folder") {
+            renderTree(child, childrenContainer, level + 1);
+        }
+
+        item.appendChild(childrenContainer);
+        container.appendChild(item);
+
+        item.addEventListener("click", event => {
+            event.stopPropagation();
+            if (child.type === "folder") {
+                child.expanded = !child.expanded;
+                renderTree(node, container, level);
+                return;
+            }
+            openFile(child.path);
+        });
+
+        item.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            showContextMenu(event.clientX, event.clientY, child);
+        });
+    }
+}
+
+function refreshExplorer() {
+    renderTree(ROOT_NODE, explorerTree, 0);
+}
+
+function findNodeByPath(node, path) {
+    if (node.path === path) return node;
+    if (node.children) {
+        for (const child of node.children) {
+            const found = findNodeByPath(child, path);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+/* ---- File operations ---- */
+async function openFile(path) {
+    try {
+        const response = await fetch("/api/files/read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            alert(result.error || "Could not read file.");
+            return;
+        }
+        const file = openFileFor(path);
+        file.content = result.content;
+        selectedFile = path;
+        selectFile(path);
+        editor.value = result.content;
+        updateLineCount(result.content);
+        updateRecent(path);
+        refreshExplorer();
+    } catch (err) {
+        console.error(err);
+        alert("Could not open file.");
+    }
+}
+
+async function closeFile(path) {
+    const idx = openedFiles.findIndex(f => f.path === path);
+    if (idx === -1) return;
+    openedFiles.splice(idx, 1);
+    if (selectedFile === path) {
+        selectedFile = null;
+        editor.value = "";
+        updateLineCount("");
+    }
+    refreshExplorer();
+}
+
+async function saveFile(path) {
+    const file = openedFiles.find(f => f.path === path);
+    if (!file) return;
+    const node = findNodeByPath(ROOT_NODE, path);
+    if (node) {
+        node.expanded = true;
+        refreshExplorer();
+    }
+    try {
+        const response = await fetch("/api/files/write", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path, content: file.content })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            alert(result.error || "Could not save file.");
+            return;
+        }
+        file.saved = true;
+        allFiles.get(path).content = file.content;
+        refreshExplorer();
+        if (selectedFile === path && editor.value !== file.content) {
+            editor.value = file.content;
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Could not save file.");
+    }
+}
+
+async function handleDelete(node) {
+    const path = node.path;
+    const isFolder = node.data.type === "folder";
+    if (isFolder) {
+        const allChildren = collectAllChildren(node);
+        if (allChildren.length > 0) {
+            alert("Cannot delete a folder that contains files.");
+            return;
+        }
+    }
+    const confirmMsg = isFolder ? `Delete folder "${node.name}" and all its contents?` : `Delete "${node.name}"?`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const response = await fetch("/api/files/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            alert(result.error || "Could not delete.");
+            return;
+        }
+        /* Remove from in-memory tree */
+        removeFromParent(ROOT_NODE, path);
+        /* Remove from opened files */
+        if (isFolder) {
+            openedFiles = openedFiles.filter(f => !f.path.startsWith(path + "/"));
+        } else {
+            const idx = openedFiles.findIndex(f => f.path === path);
+            if (idx !== -1) openedFiles.splice(idx, 1);
+        }
+        allFiles.forEach((v, k) => {
+            if (k.startsWith(path + "/")) allFiles.delete(k);
+        });
+        if (selectedFile && (selectedFile === path || selectedFile.startsWith(path + "/"))) {
+            selectedFile = null;
+            editor.value = "";
+            updateLineCount("");
+        }
+        await loadExplorerFiles();
+    } catch (err) {
+        console.error(err);
+        alert("Could not delete item.");
+    }
+}
+
+function collectAllChildren(node) {
+    let children = node.children || [];
+    for (const child of children) {
+        children = children.concat(collectAllChildren(child));
+    }
+    return children;
+}
+
+function removeFromParent(parent, path) {
+    const idx = parent.children.findIndex(child => child.path === path);
+    if (idx !== -1) {
+        parent.children.splice(idx, 1);
+        return true;
+    }
+    for (const child of parent.children) {
+        if (removeFromParent(child, path)) return true;
+    }
+    return false;
+}
+
+/* ---- UI helpers ---- */
+function selectFile(path) {
+    selectedFile = path;
+    const item = document.querySelector(`.tree-item[data-path="${CSS.escape(path)}"]`);
+    document.querySelectorAll(".tree-item").forEach(el => el.classList.remove("selected"));
+    if (item) item.classList.add("selected");
+    document.querySelectorAll(".tree-label").forEach(label => {
+        if (label.parentElement.dataset.path === path) {
+            label.style.opacity = "1";
+        } else if (isOpened(label.parentElement.dataset.path)) {
+            label.style.opacity = "0.6";
+        }
+    });
+}
+
+function updateLineCount(code) {
+    const lines = code.split("\n").length;
+    document.getElementById("line-count").textContent = `Lines: ${lines}`;
+}
+
+function showRecentFiles(paths) {
+    explorerRecent.innerHTML = "";
+    if (!paths || paths.length === 0) {
+        explorerRecent.innerHTML = PLACEHOLDER_RECENT;
+        return;
+    }
+    const fragment = document.createDocumentFragment();
+    paths.forEach(path => {
+        const name = path.split("/").pop();
+        const item = document.createElement("div");
+        item.className = "tree-item";
+        item.dataset.path = path;
+        item.setAttribute("role", "treeitem");
+        const arrow = document.createElement("span");
+        arrow.className = "tree-arrow";
+        const label = document.createElement("span");
+        label.className = "tree-label";
+        label.textContent = "📄 " + name;
+        item.appendChild(arrow);
+        item.appendChild(label);
+        fragment.appendChild(item);
+        item.addEventListener("click", () => openFile(path));
+        item.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const node = { path, data: { type: "file", name } };
+            showContextMenu(event.clientX, event.clientY, node);
+        });
+    });
+    explorerRecent.appendChild(fragment);
+}
+
+function updateRecent(path) {
+    let recent = WORKSPACE.open_files || [];
+    recent = recent.filter(p => p !== path);
+    recent.unshift(path);
+    if (recent.length > 8) recent = recent.slice(0, 8);
+    WORKSPACE.open_files = recent;
+    showRecentFiles(recent);
+    fetch("/api/workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(WORKSPACE)
+    }).catch(() => {});
+}
+
+function handleNewInFolder(folderPath) {
+    const name = prompt("Enter a new file name (e.g., script.py):");
+    if (!name || name.trim() === "") return;
+    createNewFile(folderPath + "/" + name);
+}
+
+function runCurrentCode() {
+    const code = editor.value;
+    if (runButton) runButton.click();
+}
+
+/* ---- Event listeners ---- */
+newFileButton.addEventListener("click", () => {
+    const name = prompt("Enter a new file name (e.g., script.py):");
+    if (name && name.trim() !== "") createNewFile(name);
+});
+
+refreshButton.addEventListener("click", loadExplorerFiles);
+
+editor.addEventListener("input", () => {
+    if (selectedFile) {
+        const file = openedFiles.find(f => f.path === selectedFile);
+        if (file) {
+            file.content = editor.value;
+            file.saved = false;
+        }
+    }
+    updateLineCount(editor.value);
+});
+
+/* ---- Initialize ---- */
+document.addEventListener("DOMContentLoaded", () => {
+    loadExplorerFiles();
+
+    /* Keyboard shortcuts */
+    document.addEventListener("keydown", event => {
+        if (event.ctrlKey && event.shiftKey && event.key === "N") {
+            event.preventDefault();
+            newFileButton.click();
+        } else if (event.ctrlKey && event.key === "s") {
+            event.preventDefault();
+            if (selectedFile) saveFile(selectedFile);
+        } else if (event.ctrlKey && event.key === "w") {
+            event.preventDefault();
+            if (selectedFile) closeFile(selectedFile);
+        } else if (event.ctrlKey && event.key === "r") {
+            event.preventDefault();
+            loadExplorerFiles();
+        }
+    });
+});
 
 /* ===== Binary Theme Falling Digits ===== */
 if (rain) {

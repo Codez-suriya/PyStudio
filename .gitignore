@@ -221,3 +221,11 @@ __marimo__/
 __pycache__/
 *.py[cod]
 .venv/
+
+# File explorer (user workspace & session data)
+/workspace/
+.workspace.json
+
+# Python cache
+__pycache__/
+*.py[cod]
